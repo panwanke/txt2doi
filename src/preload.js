@@ -52,7 +52,7 @@ let getdois = {
                 // 复制dois
                 let dois = items.map((item) => item.description).join("\n")
                 utools.copyText(dois)
-                utools.showNotification('doi复制成功, ${dois.substring(0,10)}')
+                utools.showNotification(`doi复制成功, ${dois.length}条`)
             }
         },
         // 子输入框为空时的占位符，默认为字符串"搜索"
