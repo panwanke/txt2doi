@@ -1,6 +1,6 @@
 {
   "pluginName": "Geting Dois",
-  "version": "1.0.0",
+  "version": "0.0.2",
   "description": "references to dois",
   "author": "Epool",
   "preload": "src/preload.js",

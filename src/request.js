@@ -4,7 +4,12 @@ const { PassThrough } = require('stream')
 // 解析txt
 let parsetxt = (txts) => {
     // parsing mulit line text
-    let txtSplit = txts.replace(/[\d()]+, [\S.]+/ig, "\n").split("\n")
+
+    // deleting http://
+    let txts2 = txts.replace(/[([ ]{1,2}https?:\/\/\\S+[)] ]{1,2}/g, "")
+
+    // recognize the journal issue and volume
+    let txtSplit = txts.replace(/[\d()_*]+, (.+?[0-9)_*])(?=\.|\Z)/g, "\n").split("\n")
     // console.log("解析text", txtSplit)
 
     // parsing title and authors

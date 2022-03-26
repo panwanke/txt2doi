@@ -50,9 +50,9 @@ let getdois = {
                 callbackSetList(items)
 
                 // 复制dois
-                let dois = items.map((item) => item.description).join("\n")
-                utools.copyText(dois)
+                let dois = items.map((item) => item.description)
                 utools.showNotification(`doi复制成功, ${dois.length}条`)
+                utools.copyText(dois.join("\n"))
             }
         },
         // 子输入框为空时的占位符，默认为字符串"搜索"
