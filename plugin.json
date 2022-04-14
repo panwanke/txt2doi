@@ -10,8 +10,13 @@
       "code": "getdois",
       "explain": "please enter reference text",
       "cmds": [
+        "getdoi",
         "doi",
-        "getdoi"
+        {
+          "type": "over",
+          "label": "获取DOI",
+          "minLength": 20
+        }
       ]
     }
   ]

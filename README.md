@@ -17,3 +17,8 @@ And for using it independantly, you could loading the `request.js` module and ca
 
 
 If you face any problem, please leaving issues on github.
+
+# todo
+- [x] keys match
+- [x] auto detect the clipboard
+- [x] support super panel

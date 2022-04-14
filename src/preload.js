@@ -1,6 +1,28 @@
 
 const requests = require("./request");
-// console.log(requests)
+const { clipboard } = require("electron");
+
+async function getref(text) {
+    let res = await requests(text);
+    res = res.filter(str => { return !!str; });
+    let items = res.map((item) => {
+        // console.log("成果获取", item)
+        return {
+            "title": item.title[0],
+            "description": item.DOI,
+            "icon": "logo.png",
+            "url": item.URL
+        };
+    }
+    );
+
+    // 复制dois
+    let dois = items.map((item) => item.description);
+    utools.showNotification(`doi复制成功, ${dois.length}条`);
+    utools.copyText(dois.join("\n"));
+
+    return items;
+}
 
 let getdois = {
     mode: "list",
@@ -8,6 +30,21 @@ let getdois = {
         // 进入插件时调用
         enter: async (action, callbackSetList) => {
             callbackSetList([]);
+            const text = await action.payload
+            console.log(text)
+            if (text === "doi" || text === "getdoi") {
+                const res = await clipboard.readText() || ''
+                utools.setSubInputValue(res)
+            } else {
+                utools.setSubInputValue("正在检索，请稍等")
+                callbackSetList([{
+                    "title": "正在检索，请稍等",
+                    "description": "请勿输入",
+                    "icon": "logo.png"
+                }]);
+                const items = await getref(text);
+                callbackSetList(items);
+            }
         },
         // 子输入框内容变化时被调用 可选 (未设置则无搜索)
         search: async (action, searchWord, callbackSetList) => {
@@ -31,28 +68,11 @@ let getdois = {
                 // utools.shellOpenExternal(url)
                 // window.utools.outPlugin()
             }
-            else if (itemData.icon === "logo.png") { // 搜索
-                callbackSetList([]);
-
+            else if (itemData.title === "开始检索") { // 搜索
                 // console.log(itemData)
-                let res = await requests(itemData.description)
-                res = res.filter(str => { return !!str })
-                let items = res.map((item) => {
-                    // console.log("成果获取", item)
-                    return {
-                        "title": item.title[0],
-                        "description": item.DOI,
-                        "icon": "logo.png",
-                        "url": item.URL
-                    }
-                }
-                )
-                callbackSetList(items)
-
-                // 复制dois
-                let dois = items.map((item) => item.description)
-                utools.showNotification(`doi复制成功, ${dois.length}条`)
-                utools.copyText(dois.join("\n"))
+                callbackSetList([]);
+                const items = await getref(itemData.description);
+                callbackSetList(items);
             }
         },
         // 子输入框为空时的占位符，默认为字符串"搜索"
