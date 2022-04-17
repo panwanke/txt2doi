@@ -12,8 +12,12 @@ let parsetxt = (txts) => {
     let txtSplit = txts.replace(/[\d()_*]+, (.+?[0-9)_*])(?=\.|\Z)/g, "\n").split("\n")
     // console.log("解析text", txtSplit)
 
-    // parsing title and authors
-    // ... need request2 from request.js
+    // 去除空行和.
+    txtSplit = txtSplit.forEach(item => {
+        if (item) {
+            return item[0] === "." ? item.slice(1) : item
+        }
+    })
 
     return txtSplit
 }

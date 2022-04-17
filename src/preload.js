@@ -5,16 +5,18 @@ const { clipboard } = require("electron");
 async function getref(text) {
     let res = await requests(text);
     res = res.filter(str => { return !!str; });
-    let items = res.map((item) => {
+    const items = [];
+    res.forEach(item => {
         // console.log("成果获取", item)
-        return {
-            "title": item.title[0],
-            "description": item.DOI,
-            "icon": "logo.png",
-            "url": item.URL
-        };
-    }
-    );
+        if (!items.includes(item)) { // 去除重复item
+            items.push({
+                "title": item.title[0],
+                "description": item.DOI,
+                "icon": "logo.png",
+                "url": item.URL
+            })
+        }
+    });
 
     // 复制dois
     let dois = items.map((item) => item.description);
