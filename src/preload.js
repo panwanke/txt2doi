@@ -4,6 +4,7 @@ const { clipboard } = require("electron");
 
 async function getref(text) {
     let res = await requests(text);
+    // console.log(res);
     res = res.filter(str => { return !!str; });
     const items = [];
     res.forEach(item => {
@@ -17,6 +18,7 @@ async function getref(text) {
             })
         }
     });
+    // console.log("获取的结果", items);
 
     // 复制dois
     let dois = items.map((item) => item.description);
@@ -33,7 +35,7 @@ let getdois = {
         enter: async (action, callbackSetList) => {
             callbackSetList([]);
             const text = await action.payload
-            console.log(text)
+            // console.log(text)
             if (text === "doi" || text === "getdoi") {
                 const res = await clipboard.readText() || ''
                 utools.setSubInputValue(res)

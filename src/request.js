@@ -4,20 +4,18 @@ const { PassThrough } = require('stream')
 // 解析txt
 let parsetxt = (txts) => {
     // parsing mulit line text
-
-    // deleting http://
-    let txts2 = txts.replace(/[([ ]{1,2}https?:\/\/\\S+[)] ]{1,2}/g, "")
-
-    // recognize the journal issue and volume
-    let txtSplit = txts.replace(/[\d()_*]+, (.+?[0-9)_*])(?=\.|\Z)/g, "\n").split("\n")
+    let txtSplit = txts.match(
+        /\D{6,}\.\s(?:[0-9\(\)]{4,6})\.\s\D{6,}(?=[0-9–():,\s]+)/g
+    )
     // console.log("解析text", txtSplit)
 
     // 去除空行和.
-    txtSplit = txtSplit.forEach(item => {
+    txtSplit = txtSplit.map(item => {
         if (item) {
             return item[0] === "." ? item.slice(1) : item
         }
     })
+    // console.log("解析后", txtSplit)
 
     return txtSplit
 }
