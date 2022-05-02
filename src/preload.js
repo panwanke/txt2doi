@@ -1,30 +1,37 @@
 
 const requests = require("./request");
-const { clipboard } = require("electron");
+// const { clipboard } = require("electron");
 
-async function getref(text) {
-    let res = await requests(text);
+async function getref(text, mode) {
+    let res = await requests(text, mode);
     // console.log(res);
     res = res.filter(str => { return !!str; });
     const items = [];
-    res.forEach(item => {
-        // console.log("成果获取", item)
-        if (!items.includes(item)) { // 去除重复item
-            console.log(item, ("container-title" in item) ? item["container-title"] : " ");
+    // 查找重复
+    let titles = new Set(res.map(item => item.title[0]));
+    titles = [...titles];
+    // console.log(titles);
+    for (let title of titles) {
+        // console.log("成果获取", title);
+        const item = res.find(item => item.title[0] === title);
+        if (titles.includes(item.title[0])) { // 去除重复item
+            // console.log(item, ("container-title" in item) ? item["container-title"] : " ");
             const authors = item.author ? item.author.map(v => v["family"]).join(", ") : "";
             const journal = ("container-title" in item) ? item["container-title"] : " "
             items.push({
                 "title": item.title[0],
                 "description": `${authors}  ${journal}  ${item.DOI}`,
                 "icon": "logo.png",
-                "url": item.URL
+                "url": item.URL,
+                "DOI": item.DOI,
+                "mode": 0
             })
         }
-    });
+    };
     // console.log("获取的结果", items);
 
     // 复制dois
-    let dois = items.map((item) => item.description);
+    let dois = items.map((item) => item.DOI);
     if (dois.length > 0) {
         utools.showNotification(`成功复制${dois.length}条doi`);
     }
@@ -39,51 +46,48 @@ let getdois = {
         // 进入插件时调用
         enter: async (action, callbackSetList) => {
             callbackSetList([]);
-            const text = action.payload;
-            // console.log(text)
-            if (text === "doi" || text === "getdoi") {
-                const res = await clipboard.readText() || ''
-                // console.log(res)
-                utools.setSubInputValue(res)
-            } else {
-                utools.setSubInputValue("正在检索，请稍等")
-                callbackSetList([{
-                    "title": "正在检索，请稍等",
-                    "description": "请勿输入",
-                    "icon": "logo.png"
-                }]);
-                const items = await getref(text);
-                callbackSetList(items);
-            }
-        },
-        // 子输入框内容变化时被调用 可选 (未设置则无搜索)
-        search: async (action, searchWord, callbackSetList) => {
-            if (!searchWord) return callbackSetList([]);
+            const txt = await action.payload;
+            // console.log(txt.split(/\n|\r/g));
 
             callbackSetList([
                 {
-                    "title": "开始检索",
-                    "description": searchWord,
-                    "icon": "logo.png"
+                    "title": "1. 根据换行符分割进行检索",
+                    "description": "选择正则模式",
+                    "mode": 1,
+                    "icon": "logo.png",
+                    "txt": txt
+                },
+                {
+                    "title": "2. 根据正则进行分割检索",
+                    "description": "选择正则模式",
+                    "mode": 2,
+                    "icon": "logo.png",
+                    "txt": txt
                 }
             ]);
         },
+        // 子输入框内容变化时被调用 可选 (未设置则无搜索)
+        // search: async (action, searchWord, callbackSetList) => {
+        //     if (!searchWord) return callbackSetList([]);
+
+        //     callbackSetList([
+        //     ]);
+        // },
         // 用户选择列表中某个条目时被调用
         select: async (action, itemData, callbackSetList) => {
-            if (itemData.title != "开始检索") {
-                window.utools.hideMainWindow()
-                const url = itemData.url
-                console.log("open url", url)
-                await require('electron').shell.openExternal(url)
-                // utools.shellOpenExternal(url)
-                // window.utools.outPlugin()
-            }
-            else if (itemData.title === "开始检索") { // 搜索
-                // console.log(itemData)
-                callbackSetList([]);
-                const items = await getref(itemData.description);
-                callbackSetList(items);
-            }
+            const mode = itemData.mode;
+            const txt = itemData.txt;
+            // console.log(mode);
+            // console.log(txt);
+
+            callbackSetList([{
+                "title": "正在检索请稍等",
+                "description": "",
+                "icon": "logo.png"
+            }]);
+            // console.log(itemData.description.split(/\n|\r/g));
+            const items = await getref(txt, mode);
+            callbackSetList(items);
         },
         // 子输入框为空时的占位符，默认为字符串"搜索"
         placeholder: "输入references (多条目，只输入title即可，加入作者准确率更高)"

@@ -10,8 +10,6 @@
       "code": "getdois",
       "explain": "please enter reference text",
       "cmds": [
-        "getdoi",
-        "doi",
         {
           "type": "over",
           "label": "获取DOI",
