@@ -10,9 +10,12 @@ async function getref(text) {
     res.forEach(item => {
         // console.log("成果获取", item)
         if (!items.includes(item)) { // 去除重复item
+            console.log(item, ("container-title" in item) ? item["container-title"] : " ");
+            const authors = item.author ? item.author.map(v => v["family"]).join(", ") : "";
+            const journal = ("container-title" in item) ? item["container-title"] : " "
             items.push({
                 "title": item.title[0],
-                "description": item.DOI,
+                "description": `${authors}  ${journal}  ${item.DOI}`,
                 "icon": "logo.png",
                 "url": item.URL
             })
@@ -22,7 +25,9 @@ async function getref(text) {
 
     // 复制dois
     let dois = items.map((item) => item.description);
-    utools.showNotification(`doi复制成功, ${dois.length}条`);
+    if (dois.length > 0) {
+        utools.showNotification(`成功复制${dois.length}条doi`);
+    }
     utools.copyText(dois.join("\n"));
 
     return items;
@@ -34,10 +39,11 @@ let getdois = {
         // 进入插件时调用
         enter: async (action, callbackSetList) => {
             callbackSetList([]);
-            const text = await action.payload
+            const text = action.payload;
             // console.log(text)
             if (text === "doi" || text === "getdoi") {
                 const res = await clipboard.readText() || ''
+                // console.log(res)
                 utools.setSubInputValue(res)
             } else {
                 utools.setSubInputValue("正在检索，请稍等")
