@@ -1,0 +1,21 @@
+{
+  "pluginName": "Geting Dois",
+  "version": "1.0.0",
+  "description": "references to dois",
+  "author": "Epool",
+  "preload": "src/preload.js",
+  "logo": "logo.png",
+  "features": [
+    {
+      "code": "getdois",
+      "explain": "please enter reference text",
+      "cmds": [
+        {
+          "type": "over",
+          "label": "获取DOI",
+          "minLength": 20
+        }
+      ]
+    }
+  ]
+}
