@@ -1,4 +1,3 @@
-// const axios = require('axios')
 
 // 解析txt
 const parsetxt1 = (txts) => {
@@ -57,37 +56,57 @@ let parsetxt2 = (txts) => {
     return ress
 }
 
+function timeout(ms, promise) {
+    return new Promise((resolve, reject) => {
+        const timeoutId = setTimeout(() => {
+            clearTimeout(timeoutId);
+            reject(new Error(`Promise timed out after ${ms} ms`));
+        }, ms);
+        promise.then((result) => {
+            clearTimeout(timeoutId);
+            resolve(result);
+        }, (error) => {
+            clearTimeout(timeoutId);
+            reject(error);
+        });
+    });
+}
+
 // 单次请求
 let request = async (url, txt) => {
     // console.log(`请求${txt}`)
-    if (!txt) return
 
-    // let params = {
-    //     "query": txt,
-    //     rows: 1,
-    // }
+    let item = ""
+    try {
+        let txt2 = txt.replace(/[\s\?\&]/g, "+")
+        const res = await timeout(60000, fetch(
+            `${url}?query.bibliographic=${encodeURI(txt2)}&rows=1`,
+            {
+                method: 'GET',
+                headers: new Headers({ "User-Agent": "GroovyBib / 1.1(https://github.com/Asynchro-Epool; mailto:qq962643013@gmail.com) BasedOnFunkyLib/1.4" }),
+            }
+        ))
+        if (res.status === 200) {
+            // let item = res.data.message.items[0];
+            let res2 = await res.json()
+            // console.log(res2)
+            item = res2.message.items[0];
+        } else {
+            throw Error(`status: ${res.status}, message: ${res.message}`)
+        }
+    }
+    catch (err) {
+        console.log(err)
+        return
+    }
+    finally {
+        // console.log("finally")
+        if (item.length === 0) {
+            return { title: "未找到条目或超时" }
+        } else {
+            return item
+        }
 
-    // const res = await axios.get(
-    //     url,
-    //     { params: params }
-    // )
-    // console.log(res)
-    // const res = await axios.get(`https://api.crossref.org/works?query=Szpunar,+K.+K.,+Khan,+N.+Y.,+%26+Schacter,+D.+L.+(2013a).+Interpolated+memory+tests+reduce+mind+wandering+and+improve+learning+of+online+lectures.+Proceedings+of+the+National+Academy+of+Sciences,+110(16),+6313%E2%80%936317.&rows=1`)
-
-    let txt2 = txt.replace(/[\s\?\&]/g, "+")
-    const res = await fetch(`${url}?query=${txt2}&rows=1`, {
-        method: 'GET',
-    })
-    // console.log("res", res.json().then(v => v))
-
-    if (res.status === 200) {
-        // let item = res.data.message.items[0];
-        let res2 = await res.json()
-        // console.log(res2)
-        let item = res2.message.items[0];
-        return item
-    } else {
-        throw Error(`status: ${res.status}, message: ${res.message}`)
     }
 }
 // 解析多个doi
@@ -101,13 +120,17 @@ let requests = async (txts1, mode) => {
     } else if (mode === 2) {
         txts = parsetxt2(txts1)
     }
+    if (txts.length === 0 | txts.length > 40) return Promise.all([{ title: "条目数量大于40" }])
     // console.log("开始解析...", txts1)
-    let items = txts.map((txt) => {
-        if (txt) {
-            console.log("请求", txt)
-            return request(url, txt)
+    const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+    let items = []
+    for (let i = 0; i < txts.length; i++) {
+        if (txts[i] && txts[i].trim().length > 0) {
+            console.log("请求", txts[i]);
+            items.push(request(url, txts[i]));
+            await wait(800);
         }
-    })
+    }
     return Promise.all(items)
 }
 
