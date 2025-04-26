@@ -1,19 +1,23 @@
-// const axios = require('axios')
-
 // 解析txt
 const parsetxt1 = (txts) => {
     const res = txts.split(/\n|\r/g).filter(v => v)
     return res
 }
 let parsetxt2 = (txts) => {
-
     const reg = /\n|\r/g
     if (reg.test(txts)) {
-        utools.showNotification(`该模式不支持换行符`);
-        utools.hideMainWindow();
+        if (typeof utools !== "undefined" && utools.showNotification) {
+            try {
+                utools.showNotification(`该模式不支持换行符`);
+            } catch (e) { console.warn("showNotification error", e); }
+        }
+        if (typeof utools !== "undefined" && utools.hideMainWindow) {
+            try {
+                utools.hideMainWindow();
+            } catch (e) { console.warn("hideMainWindow error", e); }
+        }
         throw Error("该模式不支持换行符")
     }
-
     // https regex
     const reg1 = /[a-zA-z]+:\/\/(.*\/)+([^\s])+/g;
     // inline years regex
@@ -57,59 +61,92 @@ let parsetxt2 = (txts) => {
     return ress
 }
 
+function timeout(ms, promise) {
+    return new Promise((resolve, reject) => {
+        const timeoutId = setTimeout(() => {
+            clearTimeout(timeoutId);
+            reject(new Error(`Promise timed out after ${ms} ms`));
+        }, ms);
+        promise.then((result) => {
+            clearTimeout(timeoutId);
+            resolve(result);
+        }, (error) => {
+            clearTimeout(timeoutId);
+            reject(error);
+        });
+    });
+}
+
 // 单次请求
 let request = async (url, txt) => {
     // console.log(`请求${txt}`)
-    if (!txt) return
-
-    // let params = {
-    //     "query": txt,
-    //     rows: 1,
-    // }
-
-    // const res = await axios.get(
-    //     url,
-    //     { params: params }
-    // )
-    // console.log(res)
-    // const res = await axios.get(`https://api.crossref.org/works?query=Szpunar,+K.+K.,+Khan,+N.+Y.,+%26+Schacter,+D.+L.+(2013a).+Interpolated+memory+tests+reduce+mind+wandering+and+improve+learning+of+online+lectures.+Proceedings+of+the+National+Academy+of+Sciences,+110(16),+6313%E2%80%936317.&rows=1`)
-
-    let txt2 = txt.replace(/[\s\?\&]/g, "+")
-    const res = await fetch(`${url}?query=${txt2}&rows=1`, {
-        method: 'GET',
-    })
-    // console.log("res", res.json().then(v => v))
-
-    if (res.status === 200) {
-        // let item = res.data.message.items[0];
-        let res2 = await res.json()
-        // console.log(res2)
-        let item = res2.message.items[0];
-        return item
-    } else {
-        throw Error(`status: ${res.status}, message: ${res.message}`)
+    let item = ""
+    try {
+        let txt2 = txt.replace(/[\s\?\&]/g, "+")
+        if (typeof window !== "undefined" && typeof window.fetch !== "function") {
+            throw new Error("fetch API 不可用");
+        }
+        const res = await timeout(60000, fetch(
+            `${url}?query.bibliographic=${encodeURI(txt2)}&rows=1`,
+            {
+                method: 'GET',
+                headers: new Headers({ "User-Agent": "GroovyBib / 1.1(https://github.com/Asynchro-Epool; mailto:qq962643013@gmail.com) BasedOnFunkyLib/1.4" }),
+            }
+        ))
+        if (res.status === 200) {
+            let res2 = await res.json()
+            item = res2.message.items[0];
+        } else {
+            throw Error(`status: ${res.status}, message: ${res.message}`)
+        }
+    }
+    catch (err) {
+        console.log(err)
+        if (typeof utools !== "undefined" && utools.showNotification) {
+            try {
+                utools.showNotification("请求错误: " + err.message);
+            } catch (e) { console.warn("showNotification error", e); }
+        }
+        return { title: "未找到条目或超时" }
+    }
+    finally {
+        if (!item || (Array.isArray(item) && item.length === 0)) {
+            return { title: "未找到条目或超时" }
+        } else {
+            return item
+        }
     }
 }
 // 解析多个doi
 let requests = async (txts1, mode) => {
     let url = "https://api.crossref.org/works";
-
     let txts
     if (mode === 1) {
         txts = parsetxt1(txts1)
-        // console.log(txts)
     } else if (mode === 2) {
         txts = parsetxt2(txts1)
     }
-    // console.log("开始解析...", txts1)
-    let items = txts.map((txt) => {
-        if (txt) {
-            console.log("请求", txt)
-            return request(url, txt)
+    if (txts.length === 0 || txts.length > 40) {
+        if (typeof utools !== "undefined" && utools.showNotification) {
+            try {
+                utools.showNotification("条目数量需在 1-40 之间");
+            } catch (e) { console.warn("showNotification error", e); }
         }
-    })
+        return Promise.all([{ title: "条目数量大于40" }]);
+    }
+    const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+    let items = []
+    for (let i = 0; i < txts.length; i++) {
+        if (txts[i] && txts[i].trim().length > 0) {
+            console.log("请求", txts[i]);
+            items.push(request(url, txts[i]));
+            await wait(800);
+        }
+    }
     return Promise.all(items)
 }
 
-// export default responses
-module.exports = requests
+/**
+ * 导出请求主接口，便于后续扩展
+ */
+module.exports = { requests };
