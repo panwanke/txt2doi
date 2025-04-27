@@ -1,6 +1,6 @@
 {
   "name": "getdois",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "pluginName": "Geting Dois",
   "description": "references to dois",
   "logo": "logo.png",
@@ -11,7 +11,7 @@
       "code": "getdois",
       "explain": "please enter reference text",
       "cmds": [
-        "noneui",
+        "getdois",
         {
           "type": "over",
           "label": "获取DOI",

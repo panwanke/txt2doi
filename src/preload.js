@@ -80,14 +80,34 @@ window.exports = {
                 ]);
             },
             // 子输入框内容变化时被调用 可选 (未设置则无搜索)
-            // search: async (action, searchWord, callbackSetList) => {
-            //     if (!searchWord) return callbackSetList([]);
-            //     callbackSetList([]);
-            // },
+            search: async (action, searchWord, callbackSetList) => {
+                console.log('searchWord',searchWord)
+                callbackSetList([
+                    {
+                        "title": "1. 根据换行符分割进行检索",
+                        "description": "选择正则模式",
+                        "mode": 1,
+                        "icon": "logo.png",
+                        "txt": searchWord
+                    },
+                    {
+                        "title": "2. 根据正则进行分割检索",
+                        "description": "选择正则模式",
+                        "mode": 2,
+                        "icon": "logo.png",
+                        "txt": searchWord
+                    }
+                ]);
+            },
             // 用户选择列表中某个条目时被调用
             select: async (action, itemData, callbackSetList) => {
                 const mode = itemData.mode;
-                const txt = itemData.txt;
+                let txt = itemData.txt;
+                // console.log('action',action)
+                if (txt === "getdois") {
+                    callbackSetList([{ title: "未输入内容", description: "请复制需要处理的参考文献文本并后重新触发", icon: "logo.png" }]);
+                    return;
+                }
                 callbackSetList([{
                     "title": "正在检索请稍等",
                     "description": "",
